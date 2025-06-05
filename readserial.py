@@ -31,7 +31,7 @@ def get_user_uid():
     """Get the user UID from Firebase (matching your ESP32 approach)"""
     # You'll need to replace this with your actual UID
     # You can get this from your Firebase console or from the ESP32 logs
-    return "your_user_uid_here"  # Replace with actual UID
+    return "UByUtYojiSNftinAdQ99CJXnheA2"  # Replace with actual UID
 
 def get_formatted_timestamp():
     """Generate timestamp in the exact same format as your ESP32 code using Raspberry Pi local time"""
