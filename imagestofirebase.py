@@ -60,7 +60,7 @@ def take_and_upload_image(uid):
     # Upload the image to Firebase Storage
     try:
         bucket = storage.bucket()
-        blob = bucket.blob(f"images/{uid}/{filename}")
+        blob = bucket.blob(f"images2025/{uid}/{filename}")
         blob.upload_from_string(img_encoded.tobytes(), content_type='image/jpeg')
         print(f"Image '{filename}' uploaded to Firebase Storage.")
     except Exception as e:

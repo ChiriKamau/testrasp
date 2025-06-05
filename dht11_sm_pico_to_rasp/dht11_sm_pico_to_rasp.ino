@@ -7,37 +7,35 @@
 DHT dht(DHTPIN, DHTTYPE);
 
 // --- Soil Moisture Pins ---
-// int SoilMoisture1 = 26;  // ADC0
-// int SoilMoisture2 = 27;  // ADC1
-// int SoilMoisture3 = 28;  // ADC2 (New)
-// int valve = 16;          // GPIO for valve control
+int SoilMoisture1 = 26;  // ADC0
+int SoilMoisture2 = 27;  // ADC1
+int SoilMoisture3 = 28;  // ADC2 
+
 
 unsigned long timer = 0;
 
-float temps = 26;
-float Humidity =33;
-int soilvalue1 =0 ;
-int soilvalue2 =1 ;
-int soilvalue3 =2 ;
+float temps;
+float Humidity;
+int soilvalue1;
+int soilvalue2;
+int soilvalue3;
 
 void setup() {
   Serial.begin(115200);
   delay(1000);
 
   dht.begin();
-  // pinMode(valve, OUTPUT);
-  // digitalWrite(valve, LOW);
 
   timer = millis() + 1000; // start sending after 1s
 }
 
 void loop() {
-  // Humidity = dht.readHumidity();
-  // temps = dht.readTemperature();
+  Humidity = dht.readHumidity();
+  temps = dht.readTemperature();
 
-  // soilvalue1 = map(analogRead(SoilMoisture1), 0, 1023, 100, 0);
-  // soilvalue2 = map(analogRead(SoilMoisture2), 0, 1023, 100, 0);
-  // soilvalue3 = map(analogRead(SoilMoisture3), 0, 1023, 100, 0);
+  soilvalue1 = map(analogRead(SoilMoisture1), 0, 1023, 100, 0);
+  soilvalue2 = map(analogRead(SoilMoisture2), 0, 1023, 100, 0);
+  soilvalue3 = map(analogRead(SoilMoisture3), 0, 1023, 100, 0);
 
   if (millis() > timer) {
     String jsonData = "{";
@@ -52,11 +50,7 @@ void loop() {
     timer = millis() + 1000; // 15 minutes delay
   }
 
-  // if (soilvalue1 < 50) {
-  //   digitalWrite(valve, HIGH);
-  //   delay(15000);
-  //   digitalWrite(valve, LOW);
-  // }
 
-  delay(1000); // small delay to stabilize readings
+
+  delay(60000); // small delay to stabilize readings
 }
