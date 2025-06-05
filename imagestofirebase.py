@@ -68,7 +68,7 @@ def take_and_upload_image(uid):
 
 # Main execution
 if __name__ == "__main__":
-    email = "chiri.levisk@gmail.com"
+    email = "green.74house@gmail.com"
     password = "@greenh74"  # Note: This password is not used in the authentication process
     
     uid = get_uid_from_email(email)

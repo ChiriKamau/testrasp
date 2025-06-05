@@ -52,5 +52,5 @@ void loop() {
 
 
 
-  delay(60000); // small delay to stabilize readings
+  delay(120000); // small delay to stabilize readings
 }
