@@ -6,7 +6,7 @@ from firebase_admin import db
 import time
 
 # Setup Firebase Admin
-cred = credentials.Certificate('firebase_key.json')
+cred = credentials.Certificate('firebase-adminsdk.json ')
 firebase_admin.initialize_app(cred, {
     'databaseURL': 'https://espcam-69f58-default-rtdb.firebaseio.com'
 })
