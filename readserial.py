@@ -55,20 +55,33 @@ def ensure_date_folder():
     print(f"Checking/creating folder structure: {date_folder}")
     
     try:
+        # Check if 'data' exists as a file (not a directory)
+        if os.path.exists(base_folder) and not os.path.isdir(base_folder):
+            print(f"Warning: '{base_folder}' exists as a file, not a directory!")
+            print(f"Renaming existing file to '{base_folder}.backup'")
+            os.rename(base_folder, f"{base_folder}.backup")
+        
+        # Now create the directory structure
         if not os.path.exists(date_folder):
             os.makedirs(date_folder, exist_ok=True)
             print(f"✓ Created folder: '{date_folder}'")
         else:
             print(f"✓ Folder already exists: '{date_folder}'")
+            
     except Exception as e:
         print(f"✗ Error creating folder '{date_folder}': {e}")
-        # Fallback: try to create just the base folder
+        
+        # Fallback: try using a different base folder name
         try:
-            if not os.path.exists(base_folder):
-                os.makedirs(base_folder, exist_ok=True)
-                print(f"✓ Created base folder: '{base_folder}'")
+            base_folder = "sensor_data"
+            date_folder = os.path.join(base_folder, current_date)
+            print(f"Trying alternative folder: {date_folder}")
+            
+            if not os.path.exists(date_folder):
+                os.makedirs(date_folder, exist_ok=True)
+                print(f"✓ Created alternative folder: '{date_folder}'")
         except Exception as e2:
-            print(f"✗ Error creating base folder '{base_folder}': {e2}")
+            print(f"✗ Error creating alternative folder '{date_folder}': {e2}")
     
     return date_folder
 
