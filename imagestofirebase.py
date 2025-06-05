@@ -78,6 +78,6 @@ if __name__ == "__main__":
         # Loop to capture an image and upload it to Firebase every 4 minutes (240 seconds)
         while True:
             take_and_upload_image(uid)
-            time.sleep(240)
+            time.sleep(900)
     else:
         print("User not found. Exiting.")
