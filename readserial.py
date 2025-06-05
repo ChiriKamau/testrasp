@@ -1,17 +1,8 @@
 import serial
 import json
-import firebase_admin
-from firebase_admin import credentials
-from firebase_admin import db
 import time
 import os
 from datetime import datetime
-
-# Setup Firebase Admin
-cred = credentials.Certificate('/home/lima/testrasp/firebase-adminsdk.json')
-firebase_admin.initialize_app(cred, {
-    'databaseURL': 'https://espcam-69f58-default-rtdb.firebaseio.com'
-})
 
 def setup_serial():
     """Setup serial connection with retry logic"""
@@ -29,13 +20,11 @@ def setup_serial():
     raise Exception("Could not connect to any serial port")
 
 def get_user_uid():
-    """Get the user UID from Firebase (matching your ESP32 approach)"""
-    # You'll need to replace this with your actual UID
-    # You can get this from your Firebase console or from the ESP32 logs
-    return "UByUtYojiSNftinAdQ99CJXnheA2"  # Replace with actual UID
+    """Get a local user identifier (no Firebase needed)"""
+    return "local_user_raspberry_pi"
 
 def get_formatted_timestamp():
-    """Generate timestamp in the exact same format as your ESP32 code using Raspberry Pi local time"""
+    """Generate timestamp in the same format as your ESP32 code using Raspberry Pi local time"""
     # Get current local time from Raspberry Pi
     current_time = datetime.now()
     
@@ -128,7 +117,7 @@ def save_data_locally(data, uid, timestamp):
         with open(json_filepath, 'w') as json_file:
             json.dump(daily_data, json_file, indent=2)
         
-        print(f"✓ Data appended to '{json_filepath}'")
+        print(f"✓ Data saved to '{json_filepath}'")
         print(f"  Total readings for {current_date}: {len(daily_data['readings'])}")
         return True
         
@@ -137,7 +126,7 @@ def save_data_locally(data, uid, timestamp):
         return False
 
 def validate_sensor_data(data):
-    """Validate sensor data before pushing to Firebase"""
+    """Validate sensor data before saving"""
     required_fields = ['temperature', 'humidity', 'soilMoisture1', 'soilMoisture2', 'soilMoisture3']
     
     for field in required_fields:
@@ -153,66 +142,47 @@ def validate_sensor_data(data):
     
     return True, "Valid"
 
-def push_to_firebase(data, uid):
-    """Push sensor data to Firebase in the exact same format as ESP32"""
+def process_sensor_data(data, uid):
+    """Process and save sensor data locally (offline mode)"""
     try:
-        # Get formatted timestamp matching ESP32 format
+        # Get formatted timestamp
         current_date_time = get_formatted_timestamp()
         
-        # Create database path exactly like ESP32: /lima/{uid}/readings/{timestamp}
-        database_path = f"/lima/{uid}/readings"
-        parent_path = f"{database_path}/{current_date_time}"
+        # Save data locally
+        success = save_data_locally(data, uid, current_date_time)
         
-        # Create the data structure matching ESP32 format
-        firebase_data = {
-            "/temperature": str(data['temperature']),
-            "/humidity": str(data['humidity']),
-            "/SoilMoisture1": str(data['soilMoisture1']),
-            "/SoilMoisture2": str(data['soilMoisture2']),
-            "/SoilMoisture3": str(data['soilMoisture3'])
-        }
+        if success:
+            print(f"✓ Data successfully saved locally at {current_date_time}")
+            print(f"  Temperature: {data['temperature']}°C")
+            print(f"  Humidity: {data['humidity']}%")
+            print(f"  Soil Moisture 1: {data['soilMoisture1']}")
+            print(f"  Soil Moisture 2: {data['soilMoisture2']}")
+            print(f"  Soil Moisture 3: {data['soilMoisture3']}")
         
-        # Save data locally first (always save, regardless of Firebase success)
-        save_data_locally(data, uid, current_date_time)
-        
-        # Push to Firebase
-        ref = db.reference(parent_path)
-        ref.update(firebase_data)
-        
-        print(f"✓ Pushed data to Firebase at {parent_path}")
-        print(f"  Data: {firebase_data}")
-        return True
+        return success
         
     except Exception as e:
-        print(f"✗ Firebase error: {e}")
-        print("Data is still saved locally.")
+        print(f"✗ Error processing sensor data: {e}")
         return False
 
-# Main loop with reconnection logic
-print("Starting Arduino to Firebase data logger with date-organized local backup...")
-print("Make sure your firebase-adminsdk.json file is in the same directory!")
-print("Don't forget to update the USER_UID in the code!")
 
-# Test folder creation immediately
-print("\n--- Testing folder creation ---")
-test_folder = ensure_date_folder()
-print(f"Working directory: {os.getcwd()}")
-print(f"Test folder path: {os.path.abspath(test_folder)}")
-print("--- End folder test ---\n")
 
-# Get user UID (you need to replace this with actual UID)
+# Main execution starts here
+print("Starting Arduino to Local Storage data logger (OFFLINE MODE)")
+print("No internet connection required!")
+
+# Get user UID (local identifier)
 USER_UID = get_user_uid()
-if USER_UID == "your_user_uid_here":
-    print("⚠️  WARNING: Please update the USER_UID in the code with your actual Firebase UID!")
-    print("   You can find this in your Firebase console or ESP32 serial output")
+print(f"Using local user ID: {USER_UID}")
 
+# Main loop with reconnection logic
 while True:
     try:
         ser = setup_serial()
         print("Starting data collection...")
         print(f"Connected at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-        print(f"Using database path: /lima/{USER_UID}/readings")
         print("Data will be organized by date in 'data/YYYY-MM-DD/' folders")
+        print("All data is stored locally - no internet required!")
         
         while True:
             if ser.in_waiting > 0:
@@ -225,11 +195,11 @@ while True:
                         # Validate data
                         is_valid, message = validate_sensor_data(sensor_data)
                         if is_valid:
-                            success = push_to_firebase(sensor_data, USER_UID)
+                            success = process_sensor_data(sensor_data, USER_UID)
                             if success:
-                                print(f"✓ Data successfully sent to Firebase and saved locally!")
+                                print(f"✓ Data successfully saved locally!")
                             else:
-                                print(f"✓ Data saved locally (Firebase upload failed)")
+                                print(f"✗ Failed to save data locally")
                         else:
                             print(f"✗ Invalid data: {message} - {sensor_data}")
                             
