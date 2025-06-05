@@ -49,7 +49,7 @@ void loop() {
     jsonData += "}";
 
     Serial.println(jsonData); // Send JSON to Raspberry Pi over Serial
-    timer = millis() + 900000; // 15 minutes delay
+    timer = millis() + 1000; // 15 minutes delay
   }
 
   // if (soilvalue1 < 50) {
