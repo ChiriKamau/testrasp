@@ -62,9 +62,24 @@ def ensure_date_folder():
     current_date = get_current_date()
     date_folder = os.path.join(base_folder, current_date)
     
-    if not os.path.exists(date_folder):
-        os.makedirs(date_folder)
-        print(f"Created folder: '{date_folder}'")
+    # Add debugging
+    print(f"Checking/creating folder structure: {date_folder}")
+    
+    try:
+        if not os.path.exists(date_folder):
+            os.makedirs(date_folder, exist_ok=True)
+            print(f"✓ Created folder: '{date_folder}'")
+        else:
+            print(f"✓ Folder already exists: '{date_folder}'")
+    except Exception as e:
+        print(f"✗ Error creating folder '{date_folder}': {e}")
+        # Fallback: try to create just the base folder
+        try:
+            if not os.path.exists(base_folder):
+                os.makedirs(base_folder, exist_ok=True)
+                print(f"✓ Created base folder: '{base_folder}'")
+        except Exception as e2:
+            print(f"✗ Error creating base folder '{base_folder}': {e2}")
     
     return date_folder
 
@@ -178,6 +193,13 @@ print("Starting Arduino to Firebase data logger with date-organized local backup
 print("Make sure your firebase-adminsdk.json file is in the same directory!")
 print("Don't forget to update the USER_UID in the code!")
 
+# Test folder creation immediately
+print("\n--- Testing folder creation ---")
+test_folder = ensure_date_folder()
+print(f"Working directory: {os.getcwd()}")
+print(f"Test folder path: {os.path.abspath(test_folder)}")
+print("--- End folder test ---\n")
+
 # Get user UID (you need to replace this with actual UID)
 USER_UID = get_user_uid()
 if USER_UID == "your_user_uid_here":
@@ -213,6 +235,14 @@ while True:
                             
                     except json.JSONDecodeError:
                         print(f"✗ Invalid JSON received: {line}")
+            else:
+                # Add a debug message every 30 seconds when no data is received
+                if hasattr(setup_serial, 'last_debug_time'):
+                    if time.time() - setup_serial.last_debug_time > 30:
+                        print("Waiting for sensor data from Arduino...")
+                        setup_serial.last_debug_time = time.time()
+                else:
+                    setup_serial.last_debug_time = time.time()
             
             time.sleep(1)
             
