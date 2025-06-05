@@ -4,7 +4,7 @@ import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import db
 import time
-from datetime import datetime, timezone
+from datetime import datetime
 
 # Setup Firebase Admin
 cred = credentials.Certificate('firebase-adminsdk.json')
@@ -28,22 +28,23 @@ def setup_serial():
     raise Exception("Could not connect to any serial port")
 
 def get_user_uid():
-
-    return "UByUtYojiSNftinAdQ99CJXnheA2"  # Replace with actual UID
+    """Get the user UID from Firebase (matching your ESP32 approach)"""
+    # You'll need to replace this with your actual UID
+    # You can get this from your Firebase console or from the ESP32 logs
+    return "your_user_uid_here"  # Replace with actual UID
 
 def get_formatted_timestamp():
-    """Generate timestamp in the exact same format as your ESP32 code"""
-    # Get current time with Kenya timezone offset (GMT+3)
-    current_time = datetime.now(timezone.utc)
-    kenya_time = current_time.replace(tzinfo=timezone.utc).astimezone(timezone(timezone.timedelta(hours=3)))
+    """Generate timestamp in the exact same format as your ESP32 code using Raspberry Pi local time"""
+    # Get current local time from Raspberry Pi
+    current_time = datetime.now()
     
     # Format time as HH:MM:SS
-    formatted_time = kenya_time.strftime("%H:%M:%S")
+    formatted_time = current_time.strftime("%H:%M:%S")
     
     # Format date and combine exactly like ESP32 code
-    year = kenya_time.year
-    month = kenya_time.month
-    day = kenya_time.day
+    year = current_time.year
+    month = current_time.month
+    day = current_time.day
     
     # Format: YYYY-M-D--HH:MM:SS (exactly matching your ESP32 format)
     current_date_time = f"{year}-{month}-{day}--{formatted_time}"
