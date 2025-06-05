@@ -7,7 +7,7 @@ import time
 from datetime import datetime
 
 # Setup Firebase Admin
-cred = credentials.Certificate('firebase-adminsdk.json')
+cred = credentials.Certificate('/home/lima/testrasp/firebase-adminsdk.json')
 firebase_admin.initialize_app(cred, {
     'databaseURL': 'https://espcam-69f58-default-rtdb.firebaseio.com'
 })
