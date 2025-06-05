@@ -4,6 +4,7 @@ import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import db
 import time
+import os
 from datetime import datetime
 
 # Setup Firebase Admin
@@ -51,6 +52,75 @@ def get_formatted_timestamp():
     
     return current_date_time
 
+def get_current_date():
+    """Get current date in YYYY-MM-DD format for folder naming"""
+    return datetime.now().strftime("%Y-%m-%d")
+
+def ensure_date_folder():
+    """Create data folder structure: data/YYYY-MM-DD/"""
+    base_folder = "data"
+    current_date = get_current_date()
+    date_folder = os.path.join(base_folder, current_date)
+    
+    if not os.path.exists(date_folder):
+        os.makedirs(date_folder)
+        print(f"Created folder: '{date_folder}'")
+    
+    return date_folder
+
+def save_data_locally(data, uid, timestamp):
+    """Save sensor data locally in date-organized folders with daily JSON files"""
+    try:
+        # Ensure date folder exists
+        date_folder = ensure_date_folder()
+        current_date = get_current_date()
+        
+        # JSON filename for the day
+        json_filename = f"{current_date}_readings.json"
+        json_filepath = os.path.join(date_folder, json_filename)
+        
+        # Create new reading entry
+        new_reading = {
+            timestamp: {
+                "temperature": str(data['temperature']),
+                "humidity": str(data['humidity']),
+                "SoilMoisture1": str(data['soilMoisture1']),
+                "SoilMoisture2": str(data['soilMoisture2']),
+                "SoilMoisture3": str(data['soilMoisture3'])
+            }
+        }
+        
+        # Load existing data or create new structure
+        daily_data = {
+            "date": current_date,
+            "uid": uid,
+            "readings": {}
+        }
+        
+        # If file exists, load existing data
+        if os.path.exists(json_filepath):
+            try:
+                with open(json_filepath, 'r') as json_file:
+                    daily_data = json.load(json_file)
+            except (json.JSONDecodeError, IOError) as e:
+                print(f"Warning: Could not read existing file {json_filepath}: {e}")
+                print("Creating new daily data structure")
+        
+        # Add new reading to daily data
+        daily_data["readings"].update(new_reading)
+        
+        # Save updated data back to file
+        with open(json_filepath, 'w') as json_file:
+            json.dump(daily_data, json_file, indent=2)
+        
+        print(f"✓ Data appended to '{json_filepath}'")
+        print(f"  Total readings for {current_date}: {len(daily_data['readings'])}")
+        return True
+        
+    except Exception as e:
+        print(f"✗ Error saving data locally: {e}")
+        return False
+
 def validate_sensor_data(data):
     """Validate sensor data before pushing to Firebase"""
     required_fields = ['temperature', 'humidity', 'soilMoisture1', 'soilMoisture2', 'soilMoisture3']
@@ -87,20 +157,24 @@ def push_to_firebase(data, uid):
             "/SoilMoisture3": str(data['soilMoisture3'])
         }
         
+        # Save data locally first (always save, regardless of Firebase success)
+        save_data_locally(data, uid, current_date_time)
+        
         # Push to Firebase
         ref = db.reference(parent_path)
         ref.update(firebase_data)
         
-        print(f"✓ Pushed data to {parent_path}")
+        print(f"✓ Pushed data to Firebase at {parent_path}")
         print(f"  Data: {firebase_data}")
         return True
         
     except Exception as e:
         print(f"✗ Firebase error: {e}")
+        print("Data is still saved locally.")
         return False
 
 # Main loop with reconnection logic
-print("Starting Arduino to Firebase data logger...")
+print("Starting Arduino to Firebase data logger with date-organized local backup...")
 print("Make sure your firebase-adminsdk.json file is in the same directory!")
 print("Don't forget to update the USER_UID in the code!")
 
@@ -116,6 +190,7 @@ while True:
         print("Starting data collection...")
         print(f"Connected at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         print(f"Using database path: /lima/{USER_UID}/readings")
+        print("Data will be organized by date in 'data/YYYY-MM-DD/' folders")
         
         while True:
             if ser.in_waiting > 0:
@@ -130,7 +205,9 @@ while True:
                         if is_valid:
                             success = push_to_firebase(sensor_data, USER_UID)
                             if success:
-                                print(f"✓ Data successfully sent to Firebase in ESP32 format!")
+                                print(f"✓ Data successfully sent to Firebase and saved locally!")
+                            else:
+                                print(f"✓ Data saved locally (Firebase upload failed)")
                         else:
                             print(f"✗ Invalid data: {message} - {sensor_data}")
                             
