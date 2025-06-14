@@ -241,4 +241,4 @@ while True:
         print("Retrying in 5 seconds...")
         time.sleep(5)
 
-print("Data logger stopped.")
+print("Data logger stopped.")\
